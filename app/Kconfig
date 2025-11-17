@@ -275,6 +275,10 @@ menu "Display/LED Options"
 
 rsource "src/display/Kconfig"
 
+menuconfig ZMK_RGB_LED
+    bool "RGB Addressable LED"
+    select ZMK_LOW_PRIORITY_WORK_QUEUE
+
 menuconfig ZMK_RGB_UNDERGLOW
     bool "RGB Addressable LED Underglow"
     select LED_STRIP
