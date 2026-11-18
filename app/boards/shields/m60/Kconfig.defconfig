@@ -6,4 +6,14 @@ if SHIELD_M60
 config ZMK_KEYBOARD_NAME
     default "m60"
 
+if ZMK_RGB_UNDERGLOW
+
+config SPI
+    default n
+
+config ZMK_RGB_UNDERGLOW_EXT_POWER
+    default n
+
+endif # ZMK_RGB_UNDERGLOW
+
 endif

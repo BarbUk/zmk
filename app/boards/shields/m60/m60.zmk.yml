@@ -7,3 +7,4 @@ requires: [makerdiary_nrf52840_m2]
 features:
   - keys
   - studio
+  - underglow
