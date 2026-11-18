@@ -18,7 +18,9 @@ LOG_MODULE_REGISTER(is31fl3733_strip, CONFIG_LED_STRIP_LOG_LEVEL);
 #define CMD_SEL_REG 0xFD
 #define CMD_SEL_LED 0x00
 #define CMD_SEL_PWM 0x01
+#define CMD_SEL_ABM 0x02
 #define CMD_SEL_FUNC 0x03
+#define CMD_SEL_NONE 0xFF
 
 #define CMD_LOCK_REG 0xFE
 #define CMD_LOCK_UNLOCK 0xC5
@@ -29,7 +31,10 @@ LOG_MODULE_REGISTER(is31fl3733_strip, CONFIG_LED_STRIP_LOG_LEVEL);
 #define CONF_REG_SYNC_SHIFT 0x06
 
 #define GLOBAL_CURRENT_CTRL_REG 0x01
-#define PULL_RES_SEL_REG 0x0E
+#define TIME_UPDATE_REG 0x0E
+#define SW_PULLUP_REG 0x0F
+#define CS_PULLDOWN_REG 0x10
+#define PULL_RES_MASK 0x07
 #define RESET_REG 0x11
 
 #define IS31FL3733_ROW_COUNT 12
@@ -48,6 +53,8 @@ struct is31fl3733_strip_config {
     size_t chain_length;
     uint8_t current_limit;
     uint8_t sync;
+    uint8_t sw_pullup;
+    uint8_t cs_pulldown;
 };
 
 struct is31fl3733_strip_data {
@@ -92,6 +99,11 @@ static int is31fl3733_strip_set_power(const struct device *dev, bool enable) {
     if (ret < 0) {
         LOG_ERR("Failed to set SDB pin (%d)", ret);
         return ret;
+    }
+
+    if (enable) {
+        /* Rising edge on SDB resets the I2C interface module (datasheet Table 4). */
+        data->selected_page = CMD_SEL_NONE;
     }
 
     data->powered = enable;
@@ -188,7 +200,7 @@ static int is31fl3733_strip_init(const struct device *dev) {
         data->powered = true;
     }
 
-    data->selected_page = 0xFF;
+    data->selected_page = CMD_SEL_NONE;
 
     int ret = is31fl3733_strip_select_page(dev, CMD_SEL_FUNC);
     if (ret < 0) {
@@ -201,25 +213,30 @@ static int is31fl3733_strip_init(const struct device *dev) {
         return ret;
     }
 
-    data->selected_page = 0xFF;
+    /* Reading RESET_REG resets all registers including page selection to POR state. */
+    data->selected_page = CMD_SEL_NONE;
     ret = is31fl3733_strip_select_page(dev, CMD_SEL_FUNC);
     if (ret < 0) {
         return ret;
     }
 
-    uint8_t conf_reg =
-        (config->sync << CONF_REG_SYNC_SHIFT) | CONF_REG_B_EN_MASK | CONF_REG_SSD_MASK;
-    ret = i2c_reg_write_byte_dt(&config->bus, CONF_REG, conf_reg);
+    ret = i2c_reg_write_byte_dt(&config->bus, SW_PULLUP_REG, config->sw_pullup & PULL_RES_MASK);
     if (ret < 0) {
         return ret;
     }
 
-    ret = i2c_reg_write_byte_dt(&config->bus, PULL_RES_SEL_REG, 0x00);
+    ret = i2c_reg_write_byte_dt(&config->bus, CS_PULLDOWN_REG, config->cs_pulldown & PULL_RES_MASK);
     if (ret < 0) {
         return ret;
     }
 
     ret = i2c_reg_write_byte_dt(&config->bus, GLOBAL_CURRENT_CTRL_REG, config->current_limit);
+    if (ret < 0) {
+        return ret;
+    }
+
+    uint8_t conf_reg = (config->sync << CONF_REG_SYNC_SHIFT) | CONF_REG_SSD_MASK;
+    ret = i2c_reg_write_byte_dt(&config->bus, CONF_REG, conf_reg);
     if (ret < 0) {
         return ret;
     }
@@ -266,10 +283,12 @@ static DEVICE_API(led_strip, is31fl3733_strip_api) = {
         .chain_length = DT_INST_PROP(n, chain_length),                                             \
         .current_limit = DT_INST_PROP(n, current_limit),                                           \
         .sync = DT_INST_ENUM_IDX(n, sync_mode),                                                    \
+        .sw_pullup = DT_INST_PROP(n, sw_pullup),                                                   \
+        .cs_pulldown = DT_INST_PROP(n, cs_pulldown),                                               \
     };                                                                                             \
                                                                                                    \
     static struct is31fl3733_strip_data is31fl3733_strip_data_##n = {                              \
-        .selected_page = 0xFF,                                                                     \
+        .selected_page = CMD_SEL_NONE,                                                             \
         .powered = false,                                                                          \
     };                                                                                             \
                                                                                                    \

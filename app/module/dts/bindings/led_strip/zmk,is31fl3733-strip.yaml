@@ -30,3 +30,17 @@ properties:
       - "master"
       - "slave"
     description: Multi-device clock synchronization mode.
+
+  sw-pullup:
+    type: int
+    default: 0
+    description: |
+      SWy pull-up resistor selection (Page 3, 0x0F, bits D2:D0):
+      0=none, 1=0.5k, 2=1k, 3=2k, 4=4k, 5=8k, 6=16k, 7=32k.
+
+  cs-pulldown:
+    type: int
+    default: 0
+    description: |
+      CSx pull-down resistor selection (Page 3, 0x10, bits D2:D0):
+      0=none, 1=0.5k, 2=1k, 3=2k, 4=4k, 5=8k, 6=16k, 7=32k.
