@@ -12,6 +12,7 @@
     chosen {
         zmk,kscan = &kscan0;
         zmk,physical-layout = &layout_60_ansi;
+        zmk,underglow = &led_strip;
     };
 
     kscan0: kscan {
@@ -62,4 +63,38 @@ RC(6,5)    RC(6,6)   RC(6,7)                     RC(7,0)                    RC(7
 
 &layout_60_ansi {
     transform = <&default_transform>;
+};
+
+&pinctrl {
+    i2c0_default: i2c0_default {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 1, 5)>,
+                    <NRF_PSEL(TWIM_SCL, 1, 6)>;
+        };
+    };
+
+    i2c0_sleep: i2c0_sleep {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 1, 5)>,
+                    <NRF_PSEL(TWIM_SCL, 1, 6)>;
+            low-power-enable;
+        };
+    };
+};
+
+&i2c0 {
+    status = "okay";
+    compatible = "nordic,nrf-twim";
+    pinctrl-0 = <&i2c0_default>;
+    pinctrl-1 = <&i2c0_sleep>;
+    pinctrl-names = "default", "sleep";
+    clock-frequency = <I2C_BITRATE_FAST>;
+
+    led_strip: is31fl3733@50 {
+        compatible = "zmk,is31fl3733-strip";
+        reg = <0x50>;
+        sdb-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+        chain-length = <64>;
+        current-limit = <128>;
+    };
 };
