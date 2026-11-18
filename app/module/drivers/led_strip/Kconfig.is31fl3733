@@ -1,0 +1,11 @@
+# Copyright (c) 2026 The ZMK Contributors
+# SPDX-License-Identifier: MIT
+
+DT_COMPAT_ZMK_IS31FL3733_STRIP := zmk,is31fl3733-strip
+
+config IS31FL3733_STRIP
+    bool "IS31FL3733 RGB LED matrix strip driver"
+    default $(dt_compat_enabled,$(DT_COMPAT_ZMK_IS31FL3733_STRIP))
+    depends on I2C
+    help
+      Enable LED strip driver for the Lumissil IS31FL3733 12x16 LED matrix.

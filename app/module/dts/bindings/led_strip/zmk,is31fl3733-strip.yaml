@@ -1,0 +1,32 @@
+# Copyright (c) 2026 The ZMK Contributors
+# SPDX-License-Identifier: MIT
+
+description: ISSI IS31FL3733 RGB LED Matrix Strip Driver
+
+compatible: "zmk,is31fl3733-strip"
+
+include: "i2c-device.yaml"
+
+properties:
+  chain-length:
+    type: int
+    required: true
+    description: Number of RGB pixels controlled by the matrix (up to 64).
+
+  sdb-gpios:
+    type: phandle-array
+    description: Hardware shutdown / power enable pin (active high).
+
+  current-limit:
+    type: int
+    default: 128
+    description: Global current control register value (0..255).
+
+  sync-mode:
+    type: string
+    default: "none"
+    enum:
+      - "none"
+      - "master"
+      - "slave"
+    description: Multi-device clock synchronization mode.
